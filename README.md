@@ -99,3 +99,19 @@ $$
 到此为止，我们把各种单隐变量模型在统一的观点下进行了推导介绍。对于具体的模型需要做不同的假设和分析，这将在下文讨论。
 
 ### 自编码器($AE$)
+
+自编码器的思想核心在于要求隐变量$z$和$x$能唯一对应。首先考虑**要求2**，既然能够唯一对应，则可以利用狄拉克函数的筛选特性，将真实后验分布表示为$p(z|x)=\delta(z-C(x))$，其中$C$为真实编码器。这个真实后验分布可以用神经网络拟合：$p_\theta(z|x)=\delta(z-C_\theta(x))$。对于先验分布，我们可以假设服从$p(z)=\dfrac{1}{D},0<z<D$，$D$为正数。至此已经满足了要求2。
+
+再考虑**要求1**，关于似然函数的拟合与上面一样利用狄拉克函数：$p_\theta(x|z)=\delta(x-G_\theta(z))$，其中$G_\theta$是解码器。至此要求1也已经满足。
+
+为了计算$\mathcal{L}$也即（5），我们对刚刚选取的分布做变换。狄拉克取样函数可以表示为正态分布方差趋于0的极限，于是似然函数化为$p_\theta(x|z)=\delta(x-G_\theta(z))=\lim\limits_{\sigma\to0}N(G_\theta(z),\sigma^2)$，后验分布化为$p_\theta(z|x)=\delta(z-C)=\lim\limits_{\hat{\sigma}\to0}N(C(x),\hat{\sigma}^2)$。这样代入损失函数，$\mathcal{L}$的第一项也即**重构损失项**化为：
+$$
+\begin{equation}
+\begin{split}
+&E_{x\sim p(x)}\left[E_{z\sim p(z|x)}\left[-lnp_\theta(x|z)\right]\right]\\
+&=E_{x\sim p(x)}\left[E_{z\sim p(z|x)}\left[-ln\frac{1}{\sqrt{2\pi}\sigma}e^{\frac{(x-G_\theta(z))^2}{2\sigma^2}}\right]\right]\\
+&=E_{x\sim p(x)}\left[E_{z\sim p(z|x)}\left[{\frac{(x-G_\theta(z))^2}{2\sigma^2}}\right]\right]-ln\frac{1}{\sqrt{2\pi}\sigma}\\
+&=\frac{1}{2\sigma^2}E_{x\sim p(x)}\left[E_{z\sim p(z|x)}\left[{(x-G_\theta(z))^2{}}\right]\right]-ln\frac{1}{\sqrt{2\pi}\sigma}\\
+\end{split}
+\end{equation}
+$$
