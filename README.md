@@ -88,7 +88,7 @@ $$
 $$
 可以看到我们引入了真实后验$p(z|x)$，表示的是观测到$x$，与之对应的隐变量$z$的真实分布。于是还需要用神经网络拟合出$p_\theta(z|x)$用来逼近$p(z|x)$，这种神经网络叫做**编码器($Encoder$)**；与之对应，用于拟合出似然函数$p_\theta(x|z)$的神经网络叫做**解码器($Decoder$)**或**生成器($Generator$)**。
 
-对于优化函数$\mathcal{L}$的第一项，$E_{z\sim p(z|x)}\left[-lnp_\theta(x|z)\right]$叫做**重构损失**，$p_\theta(x|z)$是解码器拟合出的似然函数，最小化$-lnp_\theta(x|z)$就是最大化似然函数。对于第二项，$KL(p(z|x)||p(z))$叫做**$KL$正则项**，是希望真实后验分布$p(z|x)$与先验分布$p(z)$尽量接近，这样就能使先验分布采样的$z$对应真实的$x$，进而放入解码器中生成。
+对于优化函数$\mathcal{L}$的第一项，$E_{z\sim p(z|x)}\left[-lnp_\theta(x|z)\right]$叫做**重构损失MSE**，$p_\theta(x|z)$是解码器拟合出的似然函数，最小化$-lnp_\theta(x|z)$就是最大化似然函数。对于第二项，$KL(p(z|x)||p(z))$叫做**$KL$正则项**，是希望真实后验分布$p(z|x)$与先验分布$p(z)$尽量接近，这样就能使先验分布采样的$z$对应真实的$x$，进而放入解码器中生成。
 
 接下来就有两个要求：
 
@@ -114,4 +114,41 @@ $$
 &=\frac{1}{2\sigma^2}E_{x\sim p(x)}\left[E_{z\sim p(z|x)}\left[{(x-G_\theta(z))^2{}}\right]\right]-ln\frac{1}{\sqrt{2\pi}\sigma}\\
 \end{split}
 \end{equation}
+$$
+对于$KL$正则项：
+$$
+\begin{equation}
+\begin{split}
+&KL(p(z|x)||p(z))\\
+&=\int\delta(z-C(x))ln\frac{\delta(z-C(x))}{p(z)}dz\\
+&=\int\delta(z-C(x))ln{\delta(z-C(x))}dz-\int\delta(z-C(x))lnp(z)dz\\
+&=\int\delta(z-C(x))ln{\delta(z-C(x))}dz-lnp(C(x))\\
+&=\int\delta(z-C(x))ln{\delta(z-C(x))}dz+lnD\\
+\end{split}
+\end{equation}
+$$
+对于前一项有，
+$$
+\begin{equation}
+\begin{split}
+&\int\delta(z-C(x))ln{\delta(z-C(x))}dz\\
+&=\int\frac{1}{\sqrt{2\pi}\hat{\sigma}}e^{-\frac{(z-C(x))^2}{2\hat{\sigma}^2}}ln\frac{1}{\sqrt{2\pi}\hat{\sigma}}e^{-\frac{(z-C(x))^2}{2\hat{\sigma}^2}}dz\\
+&=\int-\frac{(z-C(x))^2}{2\hat{\sigma}^2}\frac{1}{\sqrt{2\pi}\hat{\sigma}}e^{-\frac{(z-C(x))^2}{2\hat{\sigma}^2}}dz+\\
+&ln\frac{1}{\sqrt{2\pi}\hat{\sigma}}\int\frac{1}{\sqrt{2\pi}\hat{\sigma}}e^{-\frac{(z-C(x))^2}{2\hat{\sigma}^2}}dz\\
+&=-\frac{1}{2}-ln\sqrt{2\pi}\hat{\sigma}
+
+\end{split}
+\end{equation}
+$$
+所以$KL(p(z|x)||p(z))=-\frac{1}{2}-ln\sqrt{2\pi}\hat{\sigma}+lnD$，这是一个与$x、\theta$无关的常量，在优化过程中可以不用考虑。
+
+至此，自编码器$AE$的目标函数就推导出来了，即为重构损失项MSE$\dfrac{1}{2\sigma^2}E_{x\sim p(x)}\left[E_{z\sim p(z|x)}\left[{(x-G_\theta(z))^2{}}\right]\right]-ln\dfrac{1}{\sqrt{2\pi}\sigma}$。
+
+### 变分自编码器$(VAE)$
+
+与自编码器AE假设每个$x$唯一对应一个$z$不同，变分自编码器VAE的思想在于：假设每个$x$对应一个分布（这个分布是隐变量$z$的后验分布$p(z|x)$），再由这个分布采样出一个$z$，从而重构出$\hat{x}$，实现还原$x$。
+
+为了生成的时候方便采样，我们设先验分布为标准正态分布$p(z)=N(0,1)$，则真实后验分布应该为$\mu=C(x)$的正态分布$p(z|x)=N(\mu,\sigma^2)$，含义就是每个$x$对应一个正态分布后验。对于这个后验$p(z|x)$，可以直接用神经网络拟合函数$C_\theta(x)$，进而拟合出$p_\theta(z|x)=N(C_\theta(x),\sigma^2)$。损失函数$\mathcal{L}$的第一项和$AE$完全一致，即MSE重构损失项。关键差异在第二项$KL$正则项上：
+$$
+
 $$
