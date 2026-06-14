@@ -150,5 +150,18 @@ $$
 
 为了生成的时候方便采样，我们设先验分布为标准正态分布$p(z)=N(0,1)$，则真实后验分布应该为$\mu=C(x)$的正态分布$p(z|x)=N(\mu,\sigma^2)$，含义就是每个$x$对应一个正态分布后验。对于这个后验$p(z|x)$，可以直接用神经网络拟合函数$C_\theta(x)$，进而拟合出$p_\theta(z|x)=N(C_\theta(x),\sigma^2)$。损失函数$\mathcal{L}$的第一项和$AE$完全一致，即MSE重构损失项。关键差异在第二项$KL$正则项上：
 $$
-
+\begin{equation}
+\begin{split}
+&KL(p(z|x)||p(z))\\
+&=\int N(\mu,\sigma^2)ln\frac{N(\mu,\sigma^2)}{N(0,1)}dz\\
+&=\int\frac{1}{\sqrt{2\pi}{\sigma}}e^{-\frac{(z-\mu)^2}{2{\sigma}^2}}ln\frac{\frac{1}{\sqrt{2\pi}{\sigma}}e^{-\frac{(z-\mu)^2}{2{\sigma}^2}}}{\frac{1}{\sqrt{2\pi}{}}e^{-\frac{z^2}{2}}}\\
+&=\int\frac{1}{\sqrt{2\pi}{\sigma}}e^{-\frac{(z-\mu)^2}{2{\sigma}^2}}ln\frac{1}{\sigma}e^{\frac{1}{2}[z^2-\frac{(z-\mu^2)^2}{\sigma^2}]}dz\\
+&=\frac{1}{2}\int\frac{1}{\sqrt{2\pi}{\sigma}}e^{-\frac{(z-\mu)^2}{2{\sigma}^2}}[-ln\sigma^2+z^2-\frac{(z-\mu)^2}{\sigma^2}]dz\\
+&=\frac{1}{2}(-ln\sigma^2+\mu^2+\sigma^2-1)
+\end{split}
+\end{equation}
 $$
+至此，变分自编码器$VAE$的目标函数也推导出来了。可以看出VAE的目标函数与AE的目标函数相比，不仅有MSE项，还有KL正则项也需优化。
+
+### 扩散模型($Diffusion$)
+
